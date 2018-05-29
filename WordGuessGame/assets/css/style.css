@@ -1,0 +1,19 @@
+body {
+    background-image: url(../images/rr-xing.jpg);
+    background-size: 100vw 100vh;
+    font-family: 'Rye'
+}
+
+.game-elements {
+    color: black;
+    font-size: 2rem;
+    width: 50%;
+    margin-left: 25%;
+    background-color: whitesmoke;
+    opacity: .5;
+}
+
+#hidden-word {
+    font-size: 3rem;
+    letter-spacing: 1rem;
+}

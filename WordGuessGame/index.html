@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Railroad Word Guess</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB"
+        crossorigin="anonymous">
+    <link href='https://fonts.googleapis.com/css?family=Rye' rel='stylesheet'>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <h1 class="text-center bg-danger display-2">Railroad Word Guess!</h1>
+    <div class="game-elements text-center">
+        <p>Guess a letter to get started!<p>
+        <br>
+        <div id="hidden-word">
+
+        </div>
+        <br>
+        <p>Guesses remaining:</p>
+        <div id="remaining-num-guesses">
+
+        </div>
+        <br>
+        <p>Letters already guessed:</p>
+        <div id="letters-guessed">
+
+        </div>
+        <br>
+        <p>Wins: </p>
+        <div id="wins">
+
+        </div>
+    </div>
+    <audio id="win-sound" src="https://www.soundjay.com/transportation/train-whistle-01.mp3"></audio>
+    <audio id="lose-sound" src="https://www.soundjay.com/mechanical/bomb-falling-and-exploding-01.mp3"></audio>
+</body>
+<script src="assets/javascript/game.js"></script>
