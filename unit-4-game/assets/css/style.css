@@ -1,0 +1,27 @@
+body {
+    background-image: url("../images/bg.jpg");
+}
+
+.gem {
+    width: 200px;
+    height: 150px;
+
+    border: 1px solid black;
+}
+
+#goal {
+    width: 50%;
+}
+
+#tally {
+    width: 50%;
+}
+
+#msg {
+    font-size: x-large;
+    font-weight: bold;
+}
+
+#crystals {
+    text-align: center;
+}
