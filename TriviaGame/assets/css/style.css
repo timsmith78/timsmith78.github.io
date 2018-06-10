@@ -1,0 +1,19 @@
+body {
+    background-image: url("../images/world-map.jpeg");
+    background-size: 100vw 100vh;
+    font-family: 'Vollkorn', serif;
+}
+
+.playarea {
+    background-color: gray;
+    opacity: .6;
+    color: black;
+    border: 2px solid black; 
+    width: 50%;
+    margin-left: 25%;
+    padding: 2rem;
+}
+
+.answer {
+    cursor: pointer;
+}
