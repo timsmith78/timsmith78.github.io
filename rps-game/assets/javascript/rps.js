@@ -19,8 +19,6 @@ var myPlayerData = {
 }
 var player1taken = false
 
-
-
 // Handle database errors
 function dbError(error) {
     if (error) $("#score").text("Database access failed.  Error code: " + error.code)
@@ -32,19 +30,20 @@ rpsDb.ref("/players").on("value", (snapshot) => {
     playersArea.empty()
     $("#player-1").text("Waiting for player 1 to join...")
     $("#player-2").text("Waiting for player 2 to join...")
+    $("#result").empty()
     let currNumPlayers = snapshot ? snapshot.numChildren() : 0
 
-    console.log("currNumPlayers: " + currNumPlayers)
     if (currNumPlayers > 0) {
         snapshot.forEach((childSnapshot) => {
             let playerNum = childSnapshot.key
             player1taken = (playerNum == 1)
-            console.log("player1taken: " + player1taken)
+            $("#player-" + playerNum).empty()
+            $("#player-" + playerNum).append($("<h5>").text("Player " + playerNum + ": " + childSnapshot.val().name))
+            $("#player-" + playerNum).append($("<h5>").text("Wins: " + childSnapshot.val().wins))
+            $("#player-" + playerNum).append($("<h5>").text("Losses: " + childSnapshot.val().losses))
             if (playerNum == myPlayerID) {
                 playersArea.append($("<h5>").text(childSnapshot.val().name + ", you are player " + playerNum))
             }
-            $("#player-" + playerNum).text("Player " + playerNum + ": " + childSnapshot.val().name)
-
         })
     }
 
@@ -76,8 +75,6 @@ rpsDb.ref("/players").on("value", (snapshot) => {
             evt.preventDefault();
             let newName = $("#new-player").val();
             myPlayerID = player1taken ? 2 : 1
-
-            console.log("myPlayerID: " + myPlayerID)
             myPlayerData.name = newName;
             rpsDb.ref("/players").child(myPlayerID).set(myPlayerData)
             rpsDb.ref("/players").child(myPlayerID).onDisconnect().remove(dbError);
@@ -93,13 +90,69 @@ rpsDb.ref("/players").on("value", (snapshot) => {
 
 }, dbError)
 
+// 
 rpsDb.ref("/turn").on("value", (turnSS) => {
     let currTurn = turnSS.val().player
 
     if (currTurn === 0) {
+        // We don't have two players yet, so there is nothing to do yet
         return
     } else if (currTurn === 3) {
-        // Display result
+        // Both players have played, so compute, display, and record the result
+        rpsDb.ref("/players").once("value").then((resultSS) => {
+            let resultDiv = $("#result")
+            let player1Data = resultSS.val()[1]
+            let player2Data = resultSS.val()[2]
+            let play1 = player1Data.lastPick
+            let play2 = player2Data.lastPick
+            let p1win = false
+            let p2win = false
+
+            // Compute result
+            if (play1 === play2) {
+                // Display tie -- no further computation needed
+                resultDiv.append($("<h5>").text("Tie!!"))
+                $("#player-1").append($("<h5>").text("Played: " + player1Data.lastPick))
+                $("#player-2").append($("<h5>").text("Played: " + player2Data.lastPick))
+            } 
+            // If we get this far, a tie did not occur, so each remaining choice results in a distinct win or loss 
+            else if (play1 === "rock") {
+                if (play2 === "paper") p2win = true; else p1win = true
+            } else if (play1 === "paper") {
+                if (play2 === "scissors") p2win = true; else p1win = true
+            } else if (play1 === "scissors") {
+                if (play2 === "rock") p2win = true; else p1win = true
+            }
+
+            // Display win/loss
+            if (p1win) {
+                resultDiv.append($("<h4>").text(player1Data.name + " wins!!"))
+                $("#player-1").append($("<h5>").text("Played: " + player1Data.lastPick))
+                $("#player-2").append($("<h5>").text("Played: " + player2Data.lastPick))
+                player1Data.wins++
+                player2Data.losses++
+            }
+            if (p2win) {
+                resultDiv.append($("<h4>").text(player2Data.name + " wins!!"))
+                $("#player-1").append($("<h5>").text("Played: " + player1Data.lastPick))
+                $("#player-2").append($("<h5>").text("Played: " + player2Data.lastPick))
+                player2Data.wins++
+                player1Data.losses++
+            }
+            myPlayerData = (myPlayerID === 1) ? player1Data : player2Data // update local data tracking
+            player1Data.lastPick = ""
+            player2Data.lastPick = ""
+
+            // After timer, record win/loss and start a new round by resetting the turn tracker
+            let resultTimer = setTimeout(() => {
+                rpsDb.ref("/players").child("1").update(player1Data)
+                rpsDb.ref("/players").child("2").update(player2Data)
+                rpsDb.ref("/turn").update({
+                    player: 1
+                })
+            }, 3000)
+
+        })
     } else if (currTurn === myPlayerID) {
         // If it's my turn, let me pick rock, paper, or scissors
         let myPlayerDiv = $("#player-" + currTurn)
@@ -113,7 +166,7 @@ rpsDb.ref("/turn").on("value", (turnSS) => {
         myPlayerDiv.append($("<button>").text("Scissors")
             .attr("class", "btn btn-primary m-1")
             .attr("id", "scissors"))
-        $(".btn").click( (rpsClick) => {
+        $(".btn").click((rpsClick) => {
             myPlayerData.lastPick = rpsClick.target.getAttribute("id")
             rpsDb.ref("/players").child(myPlayerID).update(myPlayerData)
             rpsDb.ref("/turn").update({
@@ -124,7 +177,7 @@ rpsDb.ref("/turn").on("value", (turnSS) => {
 
     } else {
         // It is my opponents turn, so I'm waiting...
-        let myPlayerDiv = $("#player-" + currTurn)
+        let myPlayerDiv = $("#player-" + myPlayerID)
         myPlayerDiv.append($("<p>").text("Waiting for my opponent to play..."))
     }
 }, dbError)
