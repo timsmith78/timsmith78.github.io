@@ -16,14 +16,25 @@
     </header>
     <br>
     <div class="container">
+
         <div class="row">
-            <div id="players-area" class="p-2 col-md-3 col-sm-12"></div>
-            <div id="player-1" class="p-2 col-md-3 col-sm-12"></div>
-            <div id="result" class="p-2 col-md-3 col-sm-12"></div>
-            <div id="player-2" class="p-2 col-md-3 col-sm-12"></div>
+            <img src="../commonAssets/images/rps.png" class="col-md-4 col-sm-12 border border-primary" style='object-fit: none; object-position: 50% 50%'>
+            <div id="player-1" class="col-md-4 col-sm-12 border border-primary"></div>
+            
+            <div id="player-2" class="col-md-4 col-sm-12 border border-primary"></div>
         </div>
+        <br>
         <div class="row">
-            <div id="score" class="p-2 col-md-12 col-sm-12 bg-primary"></div>
+            <div id="players-area" class="col-md-6 col-sm-12 text-center"></div>
+            <div id="chat-area" class="col-md-6 col-sm-12">
+                <form class="form-group row">
+                    <label for="new-chat-msg" class="col-form-label">Taunt your opponent!</label>
+                    <input id="new-chat-msg" class="form-control">
+                    <button id="chat-send" class="p-2 my-2 bg-primary d-inline">Send</button>
+                </form>
+                <br>
+                <div id="chat-msgs"></div>
+            </div>
         </div>
     </div>
     <script src="assets/javascript/rps.js"></script>

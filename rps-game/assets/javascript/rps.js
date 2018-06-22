@@ -21,7 +21,7 @@ var player1taken = false
 
 // Handle database errors
 function dbError(error) {
-    if (error) $("#score").text("Database access failed.  Error code: " + error.code)
+    if (error) $("body").html("Database access failed.  Please check your internet connection and reload the page.  Error code: " + error.code)
 }
 
 // Gather players
@@ -30,7 +30,6 @@ rpsDb.ref("/players").on("value", (snapshot) => {
     playersArea.empty()
     $("#player-1").text("Waiting for player 1 to join...")
     $("#player-2").text("Waiting for player 2 to join...")
-    $("#result").empty()
     let currNumPlayers = snapshot ? snapshot.numChildren() : 0
 
     if (currNumPlayers > 0) {
@@ -42,7 +41,7 @@ rpsDb.ref("/players").on("value", (snapshot) => {
             $("#player-" + playerNum).append($("<h5>").text("Wins: " + childSnapshot.val().wins))
             $("#player-" + playerNum).append($("<h5>").text("Losses: " + childSnapshot.val().losses))
             if (playerNum == myPlayerID) {
-                playersArea.append($("<h5>").text(childSnapshot.val().name + ", you are player " + playerNum))
+                playersArea.append($("<h5>").text(childSnapshot.val().name + ", you are Player " + playerNum))
             }
         })
     }
@@ -57,7 +56,7 @@ rpsDb.ref("/players").on("value", (snapshot) => {
             .attr("class", "col-form-label")
             .text("Enter your name to play:")
         let inputName = $("<input>")
-            .attr("class", "form-control")
+            .attr("class", "form-control mr-1")
             .attr("id", "new-player")
         let submitButton = $("<button>")
             .attr("class", "p-2 my-2 bg-primary")
@@ -66,7 +65,9 @@ rpsDb.ref("/players").on("value", (snapshot) => {
         form.append(inputName)
         form.append(submitButton)
         playersArea.append(form)
-        // ...clear the turn tracker...
+        // ...clear the turn tracker and chat area...
+        $("#chat-msgs").empty();
+        rpsDb.ref("/chat").remove()
         rpsDb.ref("/turn").set({
             player: 0
         })
@@ -90,7 +91,7 @@ rpsDb.ref("/players").on("value", (snapshot) => {
 
 }, dbError)
 
-// 
+// Move the game forward each time the "turn" database object changes
 rpsDb.ref("/turn").on("value", (turnSS) => {
     let currTurn = turnSS.val().player
 
@@ -100,7 +101,7 @@ rpsDb.ref("/turn").on("value", (turnSS) => {
     } else if (currTurn === 3) {
         // Both players have played, so compute, display, and record the result
         rpsDb.ref("/players").once("value").then((resultSS) => {
-            let resultDiv = $("#result")
+            let playersAreaDiv = $("#players-area")
             let player1Data = resultSS.val()[1]
             let player2Data = resultSS.val()[2]
             let play1 = player1Data.lastPick
@@ -111,7 +112,7 @@ rpsDb.ref("/turn").on("value", (turnSS) => {
             // Compute result
             if (play1 === play2) {
                 // Display tie -- no further computation needed
-                resultDiv.append($("<h5>").text("Tie!!"))
+                playersAreaDiv.append($("<h1>").text("Tie!!"))
                 $("#player-1").append($("<h5>").text("Played: " + player1Data.lastPick))
                 $("#player-2").append($("<h5>").text("Played: " + player2Data.lastPick))
             } 
@@ -126,14 +127,14 @@ rpsDb.ref("/turn").on("value", (turnSS) => {
 
             // Display win/loss
             if (p1win) {
-                resultDiv.append($("<h4>").text(player1Data.name + " wins!!"))
+                playersAreaDiv.append($("<h1>").text(player1Data.name + " wins!!"))
                 $("#player-1").append($("<h5>").text("Played: " + player1Data.lastPick))
                 $("#player-2").append($("<h5>").text("Played: " + player2Data.lastPick))
                 player1Data.wins++
                 player2Data.losses++
             }
             if (p2win) {
-                resultDiv.append($("<h4>").text(player2Data.name + " wins!!"))
+                playersAreaDiv.append($("<h1>").text(player2Data.name + " wins!!"))
                 $("#player-1").append($("<h5>").text("Played: " + player1Data.lastPick))
                 $("#player-2").append($("<h5>").text("Played: " + player2Data.lastPick))
                 player2Data.wins++
@@ -155,15 +156,15 @@ rpsDb.ref("/turn").on("value", (turnSS) => {
         })
     } else if (currTurn === myPlayerID) {
         // If it's my turn, let me pick rock, paper, or scissors
-        let myPlayerDiv = $("#player-" + currTurn)
-        myPlayerDiv.append($("<p>").text("Your turn"))
-        myPlayerDiv.append($("<button>").text("Rock")
+        let playersAreaDiv = $("#players-area")
+        playersAreaDiv.append($("<h3>").text("It's your turn"))
+        playersAreaDiv.append($("<button>").text("Rock")
             .attr("class", "btn btn-secondary m-1")
             .attr("id", "rock"))
-        myPlayerDiv.append($("<button>").text("Paper")
+        playersAreaDiv.append($("<button>").text("Paper")
             .attr("class", "btn btn-info m-1")
             .attr("id", "paper"))
-        myPlayerDiv.append($("<button>").text("Scissors")
+        playersAreaDiv.append($("<button>").text("Scissors")
             .attr("class", "btn btn-primary m-1")
             .attr("id", "scissors"))
         $(".btn").click((rpsClick) => {
@@ -177,7 +178,21 @@ rpsDb.ref("/turn").on("value", (turnSS) => {
 
     } else {
         // It is my opponents turn, so I'm waiting...
-        let myPlayerDiv = $("#player-" + myPlayerID)
-        myPlayerDiv.append($("<p>").text("Waiting for my opponent to play..."))
+        $("#players-area").append($("<h3>").text("Waiting for Player " + ((myPlayerID === 1) ? 2 : 1) + " to play..."))
     }
 }, dbError)
+
+$("#chat-send").click( (clickEvt) => {
+    clickEvt.preventDefault()
+    rpsDb.ref("/chat").push({
+        name: myPlayerData.name,
+        msg: $("#new-chat-msg").val()
+    })
+})
+
+rpsDb.ref("/chat").on("child_added", (chatSnapshot) => {
+    let bgColor = ((myPlayerData.name === chatSnapshot.val().name) ? "bg-primary" : "bg-secondary")
+    $("#chat-msgs").append($("<p>")
+        .text(chatSnapshot.val().name + ": " + chatSnapshot.val().msg)
+        .attr("class", bgColor + " text-white rounded p-1 m-1"))
+})
